@@ -1,43 +1,53 @@
 import React, {Component} from 'react';
-import {Platform,Image, View, Text, TouchableOpacity, StyleSheet, Dimensions, FlatList} from 'react-native';
+import {Platform, Image, View, Text, TouchableOpacity, StyleSheet, Dimensions, FlatList} from 'react-native';
 import DrawerLayout from 'react-native-drawer-layout';
 import GoodsListScreen from '../screen/GoodsListScreen';
 import {commonStyle} from "../../commonStyle";
+import {Query} from 'react-apollo';
+import {PRODUCT_CATEGORIES} from '../../app/graphql/query';
 
 const {width, height} = Dimensions.get('window');
-
 export default class AuctionsScreen extends Component {
     static navigationOptions = {
         header: null
     };
-
     render() {
-        var list = [{id:'0',uri: 'http://musicugc.qianqian.com/ugcdiy/pic/a90e3ca24127bf0d6885ecc03e629b1c.jpg', name: '选项一'},
-            {id:'1',uri: 'http://musicugc.qianqian.com/ugcdiy/pic/a90e3ca24127bf0d6885ecc03e629b1c.jpg', name: '选项二'},
-            {id:'2',uri: 'http://musicugc.qianqian.com/ugcdiy/pic/a90e3ca24127bf0d6885ecc03e629b1c.jpg', name: '选项三'}];
-        var navigationView = (
-            <View style={{flex: 1, backgroundColor: commonStyle.white}}>
-                <FlatList style={styles.listStyle} data={list}
-                          keyExtractor={(item)=>item.id}
-                          renderItem={({item}) =>
-                              <View style={styles.menuItem} onPress={()=>{
-                                    this.refs.goodsList.setId(item.id)
-                              }
-                              }>
-                                  <Image style={styles.itemIcon} source={{
-                                      uri: item.uri,
-                                      cache: 'force-cache'}}/>
-                                  <Text style={styles.itemText}>{item.name}</Text>
-                              </View>
-                          }
-                />
-            </View>
-        );
+        //获取菜单并创建菜单项
+        const Menu = () => (
+            <Query query={PRODUCT_CATEGORIES}>
+                {({loading, error, data}) => {
+                    if (loading) return (<Text>Loading...</Text>);
+                    if (error) return (<Text>Error! {error.message}</Text>);
+                    return (
+                        <View style={{flex: 1, backgroundColor: commonStyle.white}}>
+                            <FlatList style={styles.listStyle} data={data.product_categories}
+                                      keyExtractor={(item) => item.id}
+                                      removeClippedSubviews={false}
+                                      renderItem={({item}) =>
+                                          <TouchableOpacity style={styles.menuItem} onPress={() => {
+                                              this.refs.drawerLayout.closeDrawer();
+                                              this.refs.goodsList.setId(item.id)
+                                          }
+                                          }>
+                                              <Image style={styles.itemIcon} source={{
+                                                  uri: item.active_icon.url,
+                                                  cache: 'force-cache'
+                                              }}/>
+                                              <Text style={styles.itemText}>{item.name}</Text>
+                                          </TouchableOpacity>
+                                      }
+                            />
+                        </View>
+                    )
+                }
+                }
+            </Query>);
         return (
             <DrawerLayout ref='drawerLayout'
                           drawerWidth={260}
-                          renderNavigationView={() => navigationView}
+                          renderNavigationView={Menu}
             >
+                {/*首页头部开始*/}
                 <View style={[{
                     width: width,
                     height: 50,
@@ -48,7 +58,6 @@ export default class AuctionsScreen extends Component {
                     borderBottomWidth: 0,//是否有下边框
                     borderColor: '#ccc',
                 }]}>
-
                     <View>
                         <TouchableOpacity style={styles.navLeft} onPress={() => {
                             this.refs.drawerLayout.openDrawer();
@@ -71,6 +80,7 @@ export default class AuctionsScreen extends Component {
                         </TouchableOpacity>
                     </View>
                 </View>
+                {/*首页头部结束*/}
                 <GoodsListScreen ref='goodsList'/>
             </DrawerLayout>
         );
@@ -115,12 +125,12 @@ const styles = StyleSheet.create({
         color: '#666',
         fontSize: 14,
     },
-    listStyle:{
+    listStyle: {
         ...Platform.select({
-            ios:{
+            ios: {
                 paddingTop: 30
             },
-            android:{
+            android: {
                 padding: 20
             }
         })
@@ -130,8 +140,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         height: 30,
         width: 200,
-        marginLeft:10,
-        marginTop:5
+        marginLeft: 10,
+        marginTop: 5
     },
     itemIcon: {
         height: 30,
@@ -142,9 +152,9 @@ const styles = StyleSheet.create({
     itemText: {
         height: 30,
         width: 200,
-        marginLeft:10,
+        marginLeft: 10,
         alignSelf: 'center',
-        fontSize:14,
+        fontSize: 14,
         color: commonStyle.navTitleColor
     }
 });
